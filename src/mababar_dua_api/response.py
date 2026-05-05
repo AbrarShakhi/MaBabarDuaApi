@@ -5,6 +5,7 @@ from typing import Any, Callable, Optional
 
 class Response:
     media_type = "text/plain"
+    charset = "utf-8"
 
     def __init__(
         self,
@@ -38,7 +39,8 @@ class Response:
         self._extra_headers["content-type"] = "text/html; charset=utf-8"
 
     def _build_headers(self) -> list[tuple[bytes, bytes]]:
-        headers: dict[str, str] = {"content-type": f"{self.media_type}; charset=utf-8"}
+        content_type = f"{self.media_type}; charset={self.charset}" if self.charset else self.media_type
+        headers: dict[str, str] = {"content-type": content_type}
         headers.update(self._extra_headers)
         return [
             (k.lower().encode("latin-1"), v.encode("latin-1"))
@@ -68,6 +70,7 @@ class Response:
 
 class JSONResponse(Response):
     media_type = "application/json"
+    charset = None
 
     def __init__(
         self,
