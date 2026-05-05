@@ -13,8 +13,9 @@ class MaBabarDuaApi:
 
     async def __call__(self, scope: dict, receive: Callable, send: Callable) -> None:
         scope_type = scope["type"]
-
-        if scope_type == "http":
+        if scope_type == "lifespan":
+            await self._handle_lifespan(receive, send)
+        elif scope_type == "http":
             await self._handle_http(scope, receive, send)
 
     async def _handle_http(
@@ -28,3 +29,25 @@ class MaBabarDuaApi:
         except Exception:
             response = Response(content="Internal Server Error", status_code=500)
         await response._asgi_send(send)
+
+    async def _handle_lifespan(self, receive: Callable, send: Callable) -> None:
+        while True:
+            event = await receive()
+            if event["type"] == "lifespan.startup":
+                await send({"type": "lifespan.startup.complete"})
+            elif event["type"] == "lifespan.shutdown":
+                await send({"type": "lifespan.shutdown.complete"})
+                return
+
+    def route(
+        self, path: Optional[str] = None, middlewares: Optional[list[Callable]] = None
+    ):
+        def wrapper(cls):
+            if not isinstance(cls, type):
+                raise ValueError("@route can only decorate classes.")
+            resolved_path = path or f"/{cls.__name__}"
+            for r in scan_class_for_routes(cls, resolved_path, middlewares or []):
+                self.router.routes.append(r)
+            return cls
+
+        return wrapper
