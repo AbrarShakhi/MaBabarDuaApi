@@ -52,7 +52,10 @@ class Router:
         await run_middlewares(route.middlewares, request)
 
         response = Response(status_code=404)
-        ret = route.handler(request, response, **parsed.named)
+        if inspect.iscoroutinefunction(route.handler):
+            ret = await route.handler(request, response, **parsed.named)
+        else:
+            ret = route.handler(request, response, **parsed.named)
         return ret if isinstance(ret, Response) else response
 
 
