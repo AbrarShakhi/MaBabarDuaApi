@@ -417,3 +417,29 @@ classDiagram
 
 ---
 
+## 5. Full Request Lifecycle
+
+A step-by-step trace of `GET /users/42?verbose=true` with header `Authorization: Bearer token`.
+
+| Step | Location | What Happens |
+|------|----------|--------------|
+| 1 | uvicorn | Accept TCP connection from client |
+| 2 | uvicorn | Read bytes, parse HTTP/1.1 request line and headers |
+| 3 | uvicorn | Build `scope` dict: `method="GET"`, `path="/users/42"`, `query_string=b"verbose=true"`, `headers=[(b"authorization", b"Bearer token")]` |
+| 4 | uvicorn | Call `await app(scope, receive, send)` |
+| 5 | `app.py` — `__call__` | `scope["type"] == "http"` → dispatch to `_handle_http()` |
+| 6 | `request.py` — `__init__` | `Request(scope, receive)` constructed: `method="GET"`, `path="/users/42"`, `queries={"verbose":"true"}`, `headers={"authorization":"Bearer token"}`, `_body=None` (not read yet) |
+| 7 | `routing.py` — `resolve` | `router.resolve(request, global_middlewares)` called |
+| 8 | `middleware.py` | `run_middlewares(global_middlewares, request)` — e.g. `log_requests` prints `[GET] /users/42` |
+| 9 | `routing.py` — route loop | `parse("/users/{id}", "/users/42")` → `Result(named={"id":"42"})` ✓ path matches; `route.method == "GET"` ✓ method matches |
+| 10 | `routing.py` | `request.path_params = {"id": "42"}` injected |
+| 11 | `middleware.py` | `run_middlewares(route.middlewares, request)` — e.g. auth middleware checks `Authorization` header |
+| 12 | `routing.py` | `response = Response(status_code=404)` created as default |
+| 13 | `routing.py` | `inspect.iscoroutinefunction(handler)` → `False`; call `handler(request, response, id="42")` → `response.send("User ID: 42")` sets `_status_code=200`, `_content="User ID: 42"` |
+| 14 | `routing.py` | Handler returned `None` (not a `Response`) → use the mutated `response` argument |
+| 15 | `app.py` — `_handle_http` | No exception raised; both `except` blocks skipped |
+| 16 | `response.py` | `response._asgi_send(send)` called |
+| 17 | `response.py` | `_build_headers()` → `[(b"content-type", b"text/plain; charset=utf-8")]` |
+| 18 | `response.py` | `await send({"type":"http.response.start","status":200,"headers":[...]})` → uvicorn writes HTTP status line and headers to TCP |
+| 19 | `response.py` | `_encode_body()` → `b"User ID: 42"`; `await send({"type":"http.response.body","body":b"User ID: 42"})` → uvicorn writes body bytes to TCP |
+| 20 | uvicorn | TCP response complete, connection closed (HTTP/1.1) |
