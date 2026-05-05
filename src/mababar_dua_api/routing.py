@@ -40,6 +40,21 @@ class Router:
             )
         )
 
+    async def resolve(
+        self, request: Request, global_middlewares: list[Callable]
+    ) -> Response:
+        await run_middlewares(global_middlewares, request)
+
+        for route in self.routes:
+            parsed = parse(route.path, request.path)
+
+        request.path_params = parsed.named
+        await run_middlewares(route.middlewares, request)
+
+        response = Response(status_code=404)
+        ret = route.handler(request, response, **parsed.named)
+        return ret if isinstance(ret, Response) else response
+
 
 def scan_class_for_routes(
     cls: type,
