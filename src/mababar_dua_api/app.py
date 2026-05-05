@@ -1,4 +1,11 @@
+from typing import Callable, Optional
+
+from .exceptions import HTTPException
 
 
-if __name__ =="__main__":
-    print("Hello World")
+class MaBabarDuaApi:
+    def __init__(self, middlewares: Optional[list[Callable]] = None) -> None:
+        self.router = None
+        self._global_middlewares: list[Callable] = middlewares or []
+
+    
