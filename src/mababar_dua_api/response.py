@@ -81,14 +81,6 @@ class JSONResponse(Response):
             headers=headers,
         )
 
-    def _build_headers(self) -> list[tuple[bytes, bytes]]:
-        headers: dict[str, str] = {"content-type": "application/json"}
-        headers.update(self._extra_headers)
-        return [
-            (k.lower().encode("latin-1"), v.encode("latin-1"))
-            for k, v in headers.items()
-        ]
-
 
 class HTMLResponse(Response):
     media_type = "text/html"
@@ -104,11 +96,3 @@ class HTMLResponse(Response):
             status_code=status_code,
             headers=headers,
         )
-
-    def _build_headers(self) -> list[tuple[bytes, bytes]]:
-        headers: dict[str, str] = {"content-type": "text/html; charset=utf-8"}
-        headers.update(self._extra_headers)
-        return [
-            (k.lower().encode("latin-1"), v.encode("latin-1"))
-            for k, v in headers.items()
-        ]
