@@ -24,6 +24,22 @@ class Router:
     def __init__(self) -> None:
         self.routes: list[Route] = []
 
+    def add_route(
+        self,
+        path: str,
+        method: str,
+        handler: Callable,
+        middlewares: list[Callable],
+    ) -> None:
+        self.routes.append(
+            Route(
+                path=path,
+                method=method.upper(),
+                handler=handler,
+                middlewares=middlewares,
+            )
+        )
+
 
 def scan_class_for_routes(
     cls: type,
