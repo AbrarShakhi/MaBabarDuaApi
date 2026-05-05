@@ -6,5 +6,13 @@ class HTTPException(Exception):
 
     @staticmethod
     def _default_detail(status_code: int) -> str:
-        defaults = {}
+        defaults = {
+            400: "Bad Request",
+            401: "Unauthorized",
+            403: "Forbidden",
+            404: "Not Found",
+            405: "Method Not Allowed",
+            422: "Unprocessable Entity",
+            500: "Internal Server Error",
+        }
         return defaults.get(status_code, "HTTP Error")
