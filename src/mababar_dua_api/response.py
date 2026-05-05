@@ -45,6 +45,25 @@ class Response:
             for k, v in headers.items()
         ]
 
+    def _encode_body(self) -> bytes:
+
+        return self._content.encode("utf-8")
+
+    async def _asgi_send(self, send: Callable) -> None:
+        await send(
+            {
+                "type": "http.response.start",
+                "status": self._status_code,
+                "headers": self._build_headers(),
+            }
+        )
+        await send(
+            {
+                "type": "http.response.body",
+                "body": self._encode_body(),
+            }
+        )
+
 
 class JSONResponse(Response):
     media_type = "application/json"
