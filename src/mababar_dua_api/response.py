@@ -46,7 +46,8 @@ class Response:
         ]
 
     def _encode_body(self) -> bytes:
-
+        if isinstance(self._content, bytes):
+            return self._content
         return self._content.encode("utf-8")
 
     async def _asgi_send(self, send: Callable) -> None:
