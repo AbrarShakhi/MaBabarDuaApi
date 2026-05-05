@@ -24,9 +24,26 @@ class Router:
     def __init__(self) -> None:
         self.routes: list[Route] = []
 
+
 def scan_class_for_routes(
     cls: type,
     path: str,
     middlewares: list[Callable],
 ) -> list[Route]:
-    return None
+    routes: list[Route] = []
+    members = inspect.getmembers(
+        cls,
+        predicate=lambda x: (inspect.isfunction(x) or inspect.ismethod(x))
+        and not (x.__name__.startswith("__") and x.__name__.endswith("__"))
+        and x.__name__.upper() in SUPPORTED_METHODS,
+    )
+    for fn_name, fn_handler in members:
+        routes.append(
+            Route(
+                path=path,
+                method=fn_name.upper(),
+                handler=fn_handler,
+                middlewares=middlewares,
+            )
+        )
+    return routes
