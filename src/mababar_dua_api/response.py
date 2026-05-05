@@ -15,3 +15,23 @@ class Response:
         self._content = content
         self._status_code = status_code
         self._extra_headers: dict[str, str] = headers or {}
+
+
+class JSONResponse(Response):
+    media_type = "application/json"
+
+    def __init__(
+        self,
+        content: Any = None,
+        status_code: int = 200,
+        headers: Optional[dict] = None,
+    ) -> None:
+        super().__init__(
+            content=json.dumps(content),
+            status_code=status_code,
+            headers=headers,
+        )
+
+
+class HTMLResponse(Response):
+    media_type = "text/html"
